@@ -1,0 +1,25 @@
+name: Docker Image CI
+run-name: 🐳 Build Docker Image
+
+# This GitHub Actions workflow file defines triggers and conditions for building a Docker Image.
+# The workflow is triggered on `push` events to the `main` branch, and when changes are made to the `Dockerfile` or any file in the `.devcontainer` directory.
+# It is also triggered on `pull_request` events targeting the `main` branch, and when changes are made to the `Dockerfile` or any file in the `.devcontainer` directory.
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [ "main" ]
+    paths:
+      - "Dockerfile"
+      - ".devcontainer/**"
+  pull_request:
+    branches: [ "main" ]
+    paths:
+      - "Dockerfile"
+      - ".devcontainer/**"
+
+jobs:
+  build:
+    name: Build Docker
+    uses: ./.github/workflows/build-image.yml
+    secrets: inherit

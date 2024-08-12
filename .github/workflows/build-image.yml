@@ -1,0 +1,77 @@
+name: build-image
+
+on:
+  workflow_call:
+    inputs:
+      registry:
+        required: false
+        type: string
+        default: ghcr.io
+      image:
+        required: false
+        type: string
+        default: postgis-h3
+    outputs:
+      image-name:
+        description: "Returns Docker image to run tests on"
+        value: ${{ jobs.build-image.outputs.image-name }}
+
+env:
+  REGISTRY: ${{ inputs.registry }}  # Default: ghcr.io
+  IMAGE: ${{ inputs.image }}        # Default: postgis-h3
+
+jobs:
+  build-image:
+    name: Build Docker image
+    runs-on: ubuntu-latest
+    outputs:
+      image-name: ${{ steps.set-image-name.outputs.image-name }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GH_TOKEN }}
+
+    - name: Calculate Dockerfile checksum
+      run: echo "DOCKERFILE_CHECKSUM=$(md5sum .devcontainer/Dockerfile | awk '{print $1}')" >> $GITHUB_ENV
+
+    - name: Extract metadata from Dockerfile
+      id: metadata
+      if: always() # github.event_name == 'push' || env.IMAGE_EXISTS != 'true'   # Always build image for pushes, for PR - only if doesn't already exist
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE}}
+        tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=${{ env.DOCKERFILE_CHECKSUM }}
+            type=sha
+
+    - name: Build and push image
+      if: always() # github.event_name == 'push'  || env.IMAGE_EXISTS != 'true' # Always build image for pushes, for PRs - only if doesn't exist
+      uses: docker/build-push-action@v5
+      with:
+        context: .devcontainer
+        file: .devcontainer/Dockerfile
+        platforms: linux/amd64
+        provenance: false
+        tags: ${{ steps.metadata.outputs.tags }}
+        labels: ${{ steps.metadata.outputs.labels }}
+        push: true
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+    - name: Set image name
+      if: always() # always output image to use
+      id: set-image-name
+      run: echo "image-name=$(echo "${{ env.REGISTRY }}/${{ github.repository }}/${{ env.IMAGE }}:${{ env.DOCKERFILE_CHECKSUM }}" | awk '{print tolower($0)}')" >> $GITHUB_OUTPUT
