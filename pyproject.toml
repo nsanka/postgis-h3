@@ -1,0 +1,32 @@
+[tool.poetry]
+name = "postgis-h3"
+version = "0.1.0"
+description = "PostGIS H3"
+authors = ["Naga Sanka <nsanka@me.com>"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.10"
+python-dotenv = "^1.0.1"
+geopandas = "^0.14.3"
+psycopg2 = "^2.9.9"
+sqlalchemy = "^2.0.30"
+geoalchemy2 = "^0.15.1"
+shapely = "^2.0.4"
+osmnx = "^1.9.3"
+ipykernel = "^6.29.4"
+tqdm = "^4.66.4"
+config = "^0.5.1"
+pyspark = "^3.4.3"
+folium = "^0.16.0"
+h3 = "^3.7.7"
+h3-pyspark = "^1.2.6"
+setuptools = "^70.0.0"
+pyyaml = "^6.0.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.2.2"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
